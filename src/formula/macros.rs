@@ -1,0 +1,21 @@
+macro_rules! formula {
+    (($($t:tt)*)) => { formula!($($t)*) };
+    (atom $e:expr) => { $crate::formula::Formula::with($crate::formula::FormulaKind::Atom($e)) };
+    (expr $e:expr) => { $e };
+    (forall<$t:ident> $f:tt) => { $crate::formula::Formula::with($crate::formula::FormulaKind::ForAll($crate::lalrpop_intern::intern(stringify!($t)), formula!($f))) };
+    (exists<$t:ident> $f:tt) => { $crate::formula::Formula::with($crate::formula::FormulaKind::Exists($crate::lalrpop_intern::intern(stringify!($t)), formula!($f))) };
+    (false) => { $crate::formula::Formula::with($crate::formula::FormulaKind::False) };
+    (true) => { $crate::formula::Formula::with($crate::formula::FormulaKind::True) };
+    (not $f:tt) => { $crate::formula::Formula::with($crate::formula::FormulaKind::Not(formula!($f))) };
+    (and $f:tt $g:tt) => { $crate::formula::Formula::with($crate::formula::FormulaKind::And(formula!($f), formula!($g))) };
+    (or $f:tt $g:tt) => { $crate::formula::Formula::with($crate::formula::FormulaKind::Or(formula!($f), formula!($g))) };
+    (implies $f:tt $g:tt) => { $crate::formula::Formula::with($crate::formula::FormulaKind::Implies(formula!($f), formula!($g))) };
+    (iff $f:tt $g:tt) => { $crate::formula::Formula::with($crate::formula::FormulaKind::Iff(formula!($f), formula!($g))) };
+}
+
+#[test]
+fn build_formula() {
+    let f = formula!(and (not (atom 22)) (forall<N> (exists<M> (atom 44))));
+    let s = format!("{:?}", f);
+    assert_eq!(s, "(and (not (atom 22)) (forall<N> (exists<M> (atom 44))))");
+}

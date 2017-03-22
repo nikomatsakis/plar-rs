@@ -1,7 +1,7 @@
 macro_rules! formula {
     (($($t:tt)*)) => { formula!($($t)*) };
-    (atom $e:expr) => { $crate::formula::Formula::with($crate::formula::FormulaKind::Atom($e)) };
-    (expr $e:expr) => { $e };
+    ({$e:expr}) => { $e };
+    ([$e:expr]) => { $crate::formula::Formula::with($crate::formula::FormulaKind::Atom($e)) };
     (forall<$t:ident> $f:tt) => { $crate::formula::Formula::with($crate::formula::FormulaKind::ForAll($crate::lalrpop_intern::intern(stringify!($t)), formula!($f))) };
     (exists<$t:ident> $f:tt) => { $crate::formula::Formula::with($crate::formula::FormulaKind::Exists($crate::lalrpop_intern::intern(stringify!($t)), formula!($f))) };
     (false) => { $crate::formula::Formula::with($crate::formula::FormulaKind::False) };
@@ -15,7 +15,7 @@ macro_rules! formula {
 
 #[test]
 fn build_formula() {
-    let f = formula!(and (not (atom 22)) (forall<N> (exists<M> (atom 44))));
+    let f = formula!(and (not [22]) (forall<N> (exists<M> [44])));
     let s = format!("{:?}", f);
-    assert_eq!(s, "(and (not (atom 22)) (forall<N> (exists<M> (atom 44))))");
+    assert_eq!(s, "(and (not [22]) (forall<N> (exists<M> [44])))");
 }

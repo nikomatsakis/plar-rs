@@ -1,6 +1,6 @@
 macro_rules! formula {
     (($($t:tt)*)) => { formula!($($t)*) };
-    ({$e:expr}) => { $e };
+    ({$e:expr}) => { ($e).clone() };
     ([$e:expr]) => { $crate::formula::Formula::with($crate::formula::FormulaKind::Atom($e)) };
     (forall<$t:ident> $f:tt) => { $crate::formula::Formula::with($crate::formula::FormulaKind::ForAll($crate::lalrpop_intern::intern(stringify!($t)), formula!($f))) };
     (exists<$t:ident> $f:tt) => { $crate::formula::Formula::with($crate::formula::FormulaKind::Exists($crate::lalrpop_intern::intern(stringify!($t)), formula!($f))) };

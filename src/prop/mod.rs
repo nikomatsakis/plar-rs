@@ -7,6 +7,8 @@ pub trait PropLogic<T> {
     fn eval(&self, v: &mut FnMut(&T) -> bool) -> bool;
     fn psimplify(&self) -> Formula<T>;
     fn psimplify1(&self) -> Formula<T>;
+    fn nnf1(&self) -> Formula<T>;
+    fn nnf(&self) -> Formula<T>;
 }
 
 impl<T> PropLogic<T> for Formula<T> {
@@ -115,5 +117,39 @@ impl<T> PropLogic<T> for Formula<T> {
             FormulaKind::ForAll(..) |
             FormulaKind::Exists(..) => panic!("forall/exists not present in prop logic"),
         }
+    }
+
+    fn nnf1(&self) -> Formula<T> {
+        match *self.kind {
+            FormulaKind::And(ref f, ref g) => formula!(and {f.nnf1()} {g.nnf1()}),
+            FormulaKind::Or(ref f, ref g) => formula!(or {f.nnf1()} {g.nnf1()}),
+            FormulaKind::Implies(ref f, ref g) => formula!(or {f.not().nnf1()} {g.nnf1()}),
+            FormulaKind::Iff(ref f, ref g) => {
+                formula!(or (and {f.nnf1()} {g.nnf1()}) (and {f.not().nnf1()} {g.not().nnf1()}))
+            }
+            FormulaKind::Not(ref f) => {
+                match *f.kind {
+                    FormulaKind::Not(ref g) => g.nnf1(),
+                    FormulaKind::And(ref p, ref q) => {
+                        formula!(or {p.not().nnf1()} {q.not().nnf1()})
+                    }
+                    FormulaKind::Or(ref p, ref q) => {
+                        formula!(and {p.not().nnf1()} {q.not().nnf1()})
+                    }
+                    FormulaKind::Implies(ref p, ref q) => formula!(and {p.nnf1()} {q.not().nnf1()}),
+                    FormulaKind::Iff(ref p, ref q) => {
+                        formula!(or
+                                 (and {p.nnf1()} {q.not().nnf1()})
+                                 (and {p.not().nnf1()} {q.nnf1()}))
+                    }
+                    _ => self.clone(),
+                }
+            }
+            _ => self.clone(),
+        }
+    }
+
+    fn nnf(&self) -> Formula<T> {
+        self.psimplify().nnf1()
     }
 }

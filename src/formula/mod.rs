@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use lalrpop_intern::InternedString;
 use std::collections::BTreeSet;
 use std::sync::Arc;
@@ -26,8 +28,45 @@ impl<T> Formula<T> {
         }
     }
 
+    /// Returns true if this is a `(not ..)` formula.
+    ///
+    /// `negative` in the book
+    pub fn is_negative(&self) -> bool {
+        match *self.kind {
+            FormulaKind::Not(_) => true,
+            _ => false
+        }
+    }
+
+    /// Returns true if this is not a `(not ..)` formula. Useful for
+    /// literal formulas (e.g., p, (not p)) and not so much for more
+    /// complex ones.
+    ///
+    /// `positive` in the book
+    pub fn is_positive(&self) -> bool {
+        !self.is_negative()
+    }
+
+    /// If this is a positive formula, returns `(not {self})`.
+    /// Otherwise, if this is a negative formula, removes the
+    /// negation.
+    ///
+    /// Note the subtle distinction from `not()`, which always wraps
+    /// in a negation.
+    ///
+    /// Intended for use only on literal formulas.
+    ///
+    /// `negate` in the book.
+    pub fn negate(&self) -> Formula<T> {
+        match *self.kind {
+            FormulaKind::Not(ref p) => p.clone(),
+            _ => self.not(),
+        }
+    }
+
+    /// Returns `(not self)`.
     pub fn not(&self) -> Formula<T> {
-        formula!(not {self.clone()})
+        formula!(not {self})
     }
 
     pub fn with(kind: FormulaKind<T>) -> Self {

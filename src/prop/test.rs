@@ -28,7 +28,6 @@ fn eval_basics() {
 fn psimplify_true() {
     let p = prop("p");
     let q = prop("q");
-    let r = prop("r");
     let f = formula!((or (implies (implies [p] [q]) true) (not false)));
     let g = f.psimplify();
     assert_eq!(format!("{:?}", g), "true");
@@ -44,5 +43,21 @@ fn psimplify_page50() {
                      (not (or [y] (and false [z]))));
     let g = f.psimplify();
     assert_eq!(format!("{:?}", g), "(implies (not [x]) (not [y]))");
+}
+
+#[test]
+fn nnf_page53() {
+    let p = prop("p");
+    let q = prop("q");
+    let r = prop("r");
+    let s = prop("s");
+    let fm = formula!(iff (iff [p] [q]) (not (implies [r] [s])));
+    let fm1 = fm.nnf();
+    assert_eq!(format!("{:?}", fm1).split_whitespace().join(" "), "
+               (or (and (or (and [p] [q]) (and (not [p]) (not [q])))
+                        (and [r] (not [s])))
+                   (and (or (and [p] (not [q])) (and (not [p]) [q]))
+                        (or (not [r]) [s])))
+    ");
 }
 

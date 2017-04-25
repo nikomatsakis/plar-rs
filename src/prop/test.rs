@@ -1,5 +1,6 @@
 #![cfg(test)]
 
+use itertools::Itertools;
 use super::PropLogic;
 use super::proposition::{prop, Proposition};
 
@@ -58,6 +59,6 @@ fn nnf_page53() {
                         (and [r] (not [s])))
                    (and (or (and [p] (not [q])) (and (not [p]) [q]))
                         (or (not [r]) [s])))
-    ");
+    ".split_whitespace().join(" "));
 }
 

@@ -2,7 +2,9 @@ use itertools::Itertools;
 use lalrpop_intern::InternedString;
 use std::collections::HashMap;
 use std::iter::{empty, once};
-use util::IteratorObject;
+use std::fmt::Debug;
+use std::io::Write;
+use util::{IteratorObject, Substitution};
 
 mod debug;
 mod test;
@@ -60,6 +62,55 @@ impl Domain {
                     }))
         }
     }
-
 }
 
+struct HerbrandLoop<'d, F>
+    where F: Clone + Debug,
+{
+    domain: &'d Domain,
+    modification_fn: Box<Fn(&Vec<F>, &Substitution<InternedString, Term>, &Vec<F>) -> Vec<F>>,
+    testing_fn: Box<Fn(&Vec<F>) -> bool>,
+    initial_formula: Vec<F>,
+    free_variables: Vec<InternedString>,
+    out: &'d mut Write,
+}
+
+impl<'d, F> HerbrandLoop<'d, F>
+    where F: Clone + Debug
+{
+    fn execute(&mut self, formula: Vec<F>) -> Vec<Vec<Term>> {
+        self.execute1(0, formula, vec![], IteratorObject::new(empty()))
+    }
+    fn execute1(&mut self,
+                mut n: usize,
+                mut formula: Vec<F>,
+                mut tried: Vec<Vec<Term>>,
+                mut tuples: IteratorObject<'d, Vec<Term>>)
+                -> Vec<Vec<Term>> {
+        loop {
+            write!(self.out, "{} ground instances tried, ", tried.len()).unwrap();
+            write!(self.out, "{} items in list\n", formula.len()).unwrap();
+            match tuples.next() {
+                None => {
+                    tuples = self.domain.ground_tuples(n, self.free_variables.len());
+                    n += 1;
+                }
+
+                Some(tuple) => {
+                    let subst = Substitution::new(&self.free_variables, &tuple);
+                    let formula1 = (self.modification_fn)(&self.initial_formula, &subst, &formula);
+                    tried.push(tuple);
+                    if !(self.testing_fn)(&formula1) {
+                        return tried;
+                    } else {
+                        formula = formula1;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// pick up here, page 160
+// fn gilmore_loop(domain: &Domain) {
+// }
